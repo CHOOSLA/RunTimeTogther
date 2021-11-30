@@ -15,16 +15,14 @@ class MapSample extends StatefulWidget {
 
 class MapSampleState extends State<MapSample> {
   Completer<GoogleMapController> _controller = Completer();
-
   late LocationSettings locationSettings;
-// 위도 경도
-  double latitude = 0.0;
-  double longitude = 0.0;
 
-  static final CameraPosition _initPosition = CameraPosition(
-    target: LatLng(36.7688, 126.9345),
-    zoom: 18.4746,
-  );
+  // 위도 경도
+  double _latitude = 0.0;
+  double _longitude = 0.0;
+
+  //친구들의 위치
+  List<Marker> _friends = [];
 
   @override
   void initState() {
@@ -49,13 +47,19 @@ class MapSampleState extends State<MapSample> {
         distanceFilter: 100,
       );
     }
+
+    _friends.add(Marker(
+        markerId: MarkerId("1"),
+        draggable: true,
+        onTap: () => print("Marker!"),
+        position: LatLng(37.7717, 126.9296)));
     _getCurremtPosition();
   }
 
   _getCurremtPosition() async {
     Position we = await determinePosition();
-    latitude = we.latitude;
-    longitude = we.longitude;
+    _latitude = we.latitude;
+    _longitude = we.longitude;
     setState(() {});
   }
 
@@ -63,13 +67,13 @@ class MapSampleState extends State<MapSample> {
     _getCurremtPosition();
     final GoogleMapController controller = await _controller.future;
     controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
-        zoom: 19.151926040649414, target: LatLng(latitude, longitude))));
+        zoom: 15, bearing: 0, target: LatLng(_latitude, _longitude))));
   }
 
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-      body: longitude == 0.0
+      body: _longitude == 0.0
           ?
           //현재 위치 받아질 때 까지 기다림
           Center(
@@ -78,10 +82,14 @@ class MapSampleState extends State<MapSample> {
           //받아졌으면 여기로
           : GoogleMap(
               mapType: MapType.normal,
-              initialCameraPosition: _initPosition,
+              initialCameraPosition: CameraPosition(
+                  zoom: 15, bearing: 0, target: LatLng(_latitude, _longitude)),
               onMapCreated: (GoogleMapController controller) {
                 _controller.complete(controller);
               },
+              myLocationEnabled: true,
+              myLocationButtonEnabled: false,
+              markers: Set.from(_friends),
             ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _refresh,
