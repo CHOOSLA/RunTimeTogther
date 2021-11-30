@@ -11,7 +11,7 @@ class MapSample extends StatefulWidget {
   State<MapSample> createState() {
     return MapSampleState();
   }
-}
+}  
 
 class MapSampleState extends State<MapSample> {
   Completer<GoogleMapController> _controller = Completer();
