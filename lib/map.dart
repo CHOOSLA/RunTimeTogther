@@ -26,12 +26,6 @@ class MapSampleState extends State<MapSample> {
     zoom: 18.4746,
   );
 
-  static final CameraPosition _kLake = CameraPosition(
-      bearing: 192.8334901395799,
-      target: LatLng(37.43296265331129, -122.08832357078792),
-      tilt: 59.440717697143555,
-      zoom: 19.151926040649414);
-
   @override
   void initState() {
     super.initState();
@@ -95,10 +89,5 @@ class MapSampleState extends State<MapSample> {
         icon: Icon(Icons.refresh),
       ),
     );
-  }
-
-  Future<void> _goToTheLake() async {
-    final GoogleMapController controller = await _controller.future;
-    controller.animateCamera(CameraUpdate.newCameraPosition(_kLake));
   }
 }
