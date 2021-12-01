@@ -1,18 +1,26 @@
 import 'dart:async';
-import 'dart:ffi';
+import 'dart:io';
+import 'dart:math';
+import 'dart:typed_data';
 
+import 'package:angles/angles.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+
 import 'package:runtimetogether/position.dart';
+import 'dart:ui' as ui;
+import 'package:image/image.dart' as image;
+import 'package:runtimetogether/profilepainter.dart';
 
 class MapSample extends StatefulWidget {
   @override
   State<MapSample> createState() {
     return MapSampleState();
   }
-}  
+}
 
 class MapSampleState extends State<MapSample> {
   Completer<GoogleMapController> _controller = Completer();
@@ -77,54 +85,134 @@ class MapSampleState extends State<MapSample> {
         zoom: 15, bearing: 0, target: LatLng(_latitude, _longitude))));
   }
 
-  Future<BitmapDescriptor> getIcons() async {
-    return await BitmapDescriptor.fromAssetImage(
-        ImageConfiguration(size: Size(1, 1)), 'assets/pin.png');
+  Future<Uint8List> getIcon() async {
+    //final Uint8List markerIcon = await getBytesFromAsset('assets/images/flutter.png', 100);
+    final Uint8List markerIcon = await getBytesFromCanvas(200, 200);
+    return markerIcon;
+  }
+
+  //이미지 불러오기
+  Future<Uint8List> getBytesFromAsset(String path, int width) async {
+    ByteData data = await rootBundle.load(path);
+    ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List(),
+        targetWidth: width);
+    ui.FrameInfo fi = await codec.getNextFrame();
+    return (await fi.image.toByteData(format: ui.ImageByteFormat.png))!
+        .buffer
+        .asUint8List();
+  }
+
+  //canvas로 그려서 가져오기
+  Future<Uint8List> getBytesFromCanvas(int width, int height) async {
+    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(pictureRecorder);
+    final Paint paint = Paint()..color = Colors.green;
+    final Radius radius = Radius.circular(20.0);
+    canvas.drawRRect(
+        RRect.fromRectAndCorners(
+          Rect.fromLTWH(0.0, 0.0, width.toDouble(), height.toDouble()),
+          topLeft: radius,
+          topRight: radius,
+          bottomLeft: radius,
+          bottomRight: radius,
+        ),
+        paint);
+
+    //아래 삼각형 그리기
+    double triangleWidth = 50;
+    Offset centerPoint =
+        Offset(width / 2 - triangleWidth / 2, height.toDouble());
+
+    Path path = Path();
+    path.moveTo(centerPoint.dx, centerPoint.dy);
+    path.lineTo(centerPoint.dx + triangleWidth, centerPoint.dy);
+    path.lineTo((centerPoint.dx + (centerPoint.dx + triangleWidth)) / 2,
+        centerPoint.dy + triangleWidth);
+
+    path.close();
+
+    canvas.drawPath(
+        path,
+        Paint()
+          ..color = Colors.green
+          ..style = PaintingStyle.fill);
+
+    ProfilePainter profileImage = ProfilePainter(
+        await _loadImage('assets/london.jpg', width - 30, height - 30),
+        width.toDouble(),
+        height.toDouble());
+
+    profileImage.paint(canvas, Size(width.toDouble(), height.toDouble()));
+    final img = await pictureRecorder
+        .endRecording()
+        .toImage(width, height + triangleWidth.round());
+    final data = await img.toByteData(format: ui.ImageByteFormat.png);
+    return data!.buffer.asUint8List();
+  }
+
+  Future<ui.Image> _loadImage(
+      String imageAssetPath, int height, int width) async {
+    final ByteData assetImageByteData = await rootBundle.load(imageAssetPath);
+    image.Image? baseSizeImage =
+        image.decodeImage(assetImageByteData.buffer.asUint8List());
+    image.Image resizeImage =
+        image.copyResize(baseSizeImage!, height: height, width: width);
+    ui.Codec codec = await ui.instantiateImageCodec(
+        Uint8List.fromList(image.encodePng(resizeImage)));
+    ui.FrameInfo frameInfo = await codec.getNextFrame();
+    return frameInfo.image;
   }
 
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
       body: Center(
-        child: FutureBuilder(
-            future: getIcons(),
-            builder: (BuildContext context, AsyncSnapshot snapshot) {
-              //해당 부분은 data를 아직 받아 오지 못했을때 실행되는 부분을 의미한다.
-              if (snapshot.hasData == false) {
-                return CircularProgressIndicator();
-              }
-              //error가 발생하게 될 경우 반환하게 되는 부분
-              else if (snapshot.hasError) {
-                return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    'Error: ${snapshot.error}',
-                    style: TextStyle(fontSize: 15),
-                  ),
-                );
-              }
-              // 데이터를 정상적으로 받아오게 되면 다음 부분을 실행하게 되는 것이다.
-              else {
-                _friends.add(new Marker(
-                    markerId: MarkerId('1'),
-                    icon: snapshot.data,
-                    onTap: () => {print('마커눌림')},
-                    position: LatLng(36.7749, 126.9327)));
-                return GoogleMap(
-                  mapType: MapType.normal,
-                  initialCameraPosition: CameraPosition(
-                      zoom: 15,
-                      bearing: 0,
-                      target: LatLng(_latitude, _longitude)),
-                  onMapCreated: (GoogleMapController controller) {
-                    _controller.complete(controller);
-                  },
-                  myLocationEnabled: true,
-                  myLocationButtonEnabled: false,
-                  markers: Set.from(_friends),
-                );
-              }
-            }),
+        child: _latitude == 0.0
+            ? new CircularProgressIndicator(
+                color: Colors.green,
+              )
+            : FutureBuilder(
+                future: getIcon(),
+                builder: (BuildContext context, AsyncSnapshot snapshot) {
+                  //해당 부분은 data를 아직 받아 오지 못했을때 실행되는 부분을 의미한다.
+                  if (snapshot.hasData == false) {
+                    return CircularProgressIndicator(
+                      color: Colors.greenAccent,
+                    );
+                  }
+                  //error가 발생하게 될 경우 반환하게 되는 부분
+                  else if (snapshot.hasError) {
+                    return Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        'Error: ${snapshot.error}',
+                        style: TextStyle(fontSize: 15),
+                      ),
+                    );
+                  }
+                  // 데이터를 정상적으로 받아오게 되면 다음 부분을 실행하게 되는 것이다.
+                  else {
+                    //이제 여기서 계속 통신 받아서 새로고침
+                    _friends.add(new Marker(
+                        markerId: MarkerId('1'),
+                        icon: BitmapDescriptor.fromBytes(snapshot.data),
+                        onTap: () => {print('마커눌림')},
+                        position: LatLng(36.7749, 126.9327)));
+                    return GoogleMap(
+                      mapType: MapType.normal,
+                      initialCameraPosition: CameraPosition(
+                          zoom: 15,
+                          bearing: 0,
+                          target: LatLng(_latitude, _longitude)),
+                      onMapCreated: (GoogleMapController controller) {
+                        _controller.complete(controller);
+                      },
+                      myLocationEnabled: true,
+                      myLocationButtonEnabled: false,
+                      markers: Set.from(_friends),
+                    );
+                  }
+                }),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _refresh,
