@@ -1,3 +1,3 @@
 class Env {
-  static String URL_PREFIX = 'http://220.69.208.121';
+  static String URL_PREFIX = 'http://220.69.208.121/runtime';
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:runtimetogether/main.dart';
 import 'package:http/http.dart' as http;
+import 'package:runtimetogether/states/env.dart';
 
 class Login extends StatefulWidget {
   @override
@@ -22,7 +23,7 @@ class _Login extends State<Login> {
     String user_id = user_idController.text;
     String password = passwordController.text;
 
-    var url = Uri.parse('http://152.70.93.137/login_user.php');
+    var url = Uri.parse('${Env.URL_PREFIX}/login_user.php');
 
     var data = {'user_id': user_id, 'password': password};
 
