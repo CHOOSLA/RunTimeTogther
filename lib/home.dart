@@ -4,7 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:runtimetogether/map.dart';
 import 'package:runtimetogether/states/userstate.dart';
-import 'package:runtimetogether/sign_up.dart';
+import 'package:runtimetogether/singup.dart';
 import 'package:http/http.dart' as http;
 
 void main() => runApp(loginFormApp);
@@ -28,7 +28,7 @@ class _home extends State<home> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, 
+      debugShowCheckedModeBanner: false,
       title: '지피에스',
       debugShowMaterialGrid: false,
       initialRoute: ROOT_PAGE,

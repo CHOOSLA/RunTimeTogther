@@ -6,7 +6,7 @@ import 'package:runtimetogether/home.dart';
 import 'package:runtimetogether/main.dart';
 import 'package:runtimetogether/map.dart';
 import 'package:runtimetogether/states/userstate.dart';
-import 'package:runtimetogether/sign_up.dart';
+import 'package:runtimetogether/singup.dart';
 import 'package:http/http.dart' as http;
 
 class Login extends StatefulWidget {
@@ -152,11 +152,7 @@ class _Login extends State<Login> {
                                       fontSize: 20,
                                     )),
                                 onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => sign_up()),
-                                  );
+                                  Navigator.pushNamed(context, SING_UP_PAGE);
                                 },
                               ),
                             ],
