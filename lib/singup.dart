@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:runtimetogether/main.dart';
 import 'package:http/http.dart' as http;
 
-class sign_up extends StatefulWidget {
+class SignUp extends StatefulWidget {
   @override
-  _sign_up createState() => _sign_up();
+  _SignUpState createState() => _SignUpState();
 }
 
-class _sign_up extends State<sign_up> {
+class _SignUpState extends State<SignUp> {
   bool visible = false;
 
   final user_idController = TextEditingController();
@@ -143,11 +143,7 @@ class _sign_up extends State<sign_up> {
                                 )),
                             onPressed: () {
                               userRegistration();
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => Login()),
-                              );
+                              Navigator.pop(context);
                             },
                           ),
                           Visibility(
