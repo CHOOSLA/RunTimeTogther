@@ -1,12 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:geolocator/geolocator.dart';
-import 'package:provider/provider.dart';
-import 'package:runtimetogether/home.dart';
 import 'package:runtimetogether/main.dart';
-import 'package:runtimetogether/map.dart';
-import 'package:runtimetogether/states/userstate.dart';
-import 'package:runtimetogether/singup.dart';
 import 'package:http/http.dart' as http;
 
 class Login extends StatefulWidget {
@@ -84,7 +78,7 @@ class _Login extends State<Login> {
                 ),
                 Center(
                   child: Image(
-                    image: AssetImage('images/logo1.png'),
+                    image: AssetImage('assets/images/logo1.png'),
                   ),
                 ),
                 SizedBox(

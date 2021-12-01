@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:runtimetogether/main.dart';
 import 'package:http/http.dart' as http;
 
 class SignUp extends StatefulWidget {
@@ -76,7 +75,7 @@ class _SignUpState extends State<SignUp> {
             ),
             Center(
               child: Image(
-                image: AssetImage('images/logo1.png'),
+                image: AssetImage('assets/images/logo1.png'),
               ),
             ),
             SizedBox(
