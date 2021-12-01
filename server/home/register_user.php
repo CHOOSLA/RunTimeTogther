@@ -8,10 +8,10 @@ $json = file_get_contents('php://input');
 // Decode the received JSON and Store into $obj variable.
 $obj = json_decode($json,true);
 
-$user_id = $obj['user_id'];
+$user_id = $obj['userid'];
 
 // Getting name from $obj object.
-$name = $obj['name'];
+$name = $obj['username'];
  
 // Getting Email from $obj object.
 $email = $obj['email'];
@@ -19,32 +19,32 @@ $email = $obj['email'];
 // Getting Password from $obj object.
 $password = $obj['password'];
 
-$phone = $ohj['phone'];
+$phone = $obj['phone'];
 
-$image = $ohj['image'];
+$image = $obj['image'];
 
 // Checking whether Email is Already Exist or Not in MySQL Table.
 $CheckemailSQL = "SELECT * FROM user WHERE email='$email'";
  
 // Executing Email Check MySQL Query.
-$result = mysqli_query($db,$CheckemailSQL)
-$checkemail = mysqli_fetch_array($result);
+$result1 = mysqli_query($db,$CheckemailSQL);
+$checkemail = mysqli_fetch_array($result1);
 
-$CheckuseridSQL = "SELECT * FROM user WHERE user_id='$user_id'";
+$CheckuseridSQL = "SELECT * FROM user WHERE userid='$user_id'";
 
-$result = mysqli_query($db,$CheckuseridSQL);
-$checkuserid = mysqli_fetch_array($result);
+$result2 = mysqli_query($db,$CheckuseridSQL);
+$checkuserid = mysqli_fetch_array($result2);
 
-$ChecknameSQL = "SELECT * FROM user WHERE name='$name'";
+$ChecknameSQL = "SELECT * FROM user WHERE username='$name'";
 
-$result = mysqli_query($db,$ChecknameSQL);
-$checkname = mysqli_fetch_array($reult);
+$result3 = mysqli_query($db,$ChecknameSQL);
+$checkname = mysqli_fetch_array($result3);
 
 
-$CheckphoneSQL = "SELECT * FROM user WHERE name='$phone'";
+$CheckphoneSQL = "SELECT * FROM user WHERE phone='$phone'";
 
-$result = mysqli_query($db,$CheckphoneSQL);
-$checkphone = mysqli_fetch_array($reult);
+$result4 = mysqli_query($db,$CheckphoneSQL);
+$checkphone = mysqli_fetch_array($result4);
 
 
 if(isset($checkemail, $checkuserid, $checkname)){
@@ -95,7 +95,7 @@ if(isset($checkemail, $checkuserid, $checkname)){
 else{
  
 	 // Creating SQL query and insert the record into MySQL database table.
-	 $Sql_Query = "insert into user (user_id,name,email,password,phone,image) values ('$user_id','$name','$email', '$password','$phone','$image')";
+	 $Sql_Query = "insert into user (userid,username,email,password,phone,image) values ('$user_id','$name','$email', '$password','$phone','$image')";
 	 
 	 
 	 if(mysqli_query($db,$Sql_Query)){

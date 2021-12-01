@@ -1,7 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+
+import 'states/env.dart';
 
 class SignUp extends StatefulWidget {
   @override
@@ -15,6 +19,10 @@ class _SignUpState extends State<SignUp> {
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final phoneController = TextEditingController();
+  PickedFile? image;
+
+  late List<int> bytes;
 
   Future userRegistration() async {
     setState(() {
@@ -25,14 +33,17 @@ class _SignUpState extends State<SignUp> {
     String name = nameController.text;
     String email = emailController.text;
     String password = passwordController.text;
+    String phone = passwordController.text;
 
-    var url = Uri.parse('http://152.70.93.137/register_user.php');
+    var url = Uri.parse('${Env.URL_PREFIX}/register_user.php');
 
     var data = {
-      'user_id': user_id,
-      'name': name,
+      'userid': user_id,
+      'username': name,
       'email': email,
-      'password': password
+      'password': password,
+      'phone': phone,
+      'image': base64.encode(File(image!.path).readAsBytesSync())
     };
 
     var response = await http.post(url, body: json.encode(data));
@@ -61,6 +72,13 @@ class _SignUpState extends State<SignUp> {
         );
       },
     );
+  }
+
+  Future getImageFromGallery() async {
+    var image =
+        await ImagePicker.platform.pickImage(source: ImageSource.gallery);
+    this.image = image;
+    setState(() {});
   }
 
   @override
@@ -106,6 +124,42 @@ class _SignUpState extends State<SignUp> {
                       padding: EdgeInsets.all(45.0),
                       child: Column(
                         children: <Widget>[
+                          Text(
+                            '프로필 이미지',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 15),
+                          ),
+                          SizedBox(
+                            height: 10,
+                          ),
+                          GestureDetector(
+                            onTap: getImageFromGallery,
+                            child: Container(
+                                width: 150,
+                                height: 150,
+                                decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Color(0xff14511a)),
+                                child: this.image == null
+                                    ? Center(
+                                        child: FittedBox(
+                                            child: Icon(Icons.add),
+                                            fit: BoxFit.fill),
+                                      )
+                                    : Container(
+                                        padding: EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            image: DecorationImage(
+                                                fit: BoxFit.fill,
+                                                image: Image.file(
+                                                        File(image!.path))
+                                                    .image)),
+                                      )),
+                          ),
+                          SizedBox(
+                            height: 10,
+                          ),
                           TextField(
                             controller: nameController,
                             decoration: InputDecoration(labelText: '닉네임'),
@@ -132,7 +186,7 @@ class _SignUpState extends State<SignUp> {
                           ),
                           SizedBox(height: 10),
                           TextField(
-                            controller: emailController,
+                            controller: phoneController,
                             decoration: InputDecoration(labelText: '핸드폰'),
                             keyboardType: TextInputType.text,
                           ),
