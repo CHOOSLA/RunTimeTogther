@@ -130,6 +130,12 @@ class _SignUpState extends State<SignUp> {
                             decoration: InputDecoration(labelText: '이메일'),
                             keyboardType: TextInputType.text,
                           ),
+                          SizedBox(height: 10),
+                          TextField(
+                            controller: emailController,
+                            decoration: InputDecoration(labelText: '핸드폰'),
+                            keyboardType: TextInputType.text,
+                          ),
                           SizedBox(height: 50),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(

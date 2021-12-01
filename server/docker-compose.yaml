@@ -16,7 +16,6 @@ services:
       - MYSQL_USER=test
       - MYSQL_PASSWORD=test
       - TZ=Asia/Seoul
-    command: mysqld --sql_mode="ORACLE"
 
   php:
     build:
@@ -45,7 +44,7 @@ services:
     image: nginx:1.19.7-alpine
     container_name: "nginx_container_runtime"
     volumes:
-      - .:/docker
+      - .:/server
       - ./etc/nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./etc/nginx/logs:/etc/nginx/logs
 
