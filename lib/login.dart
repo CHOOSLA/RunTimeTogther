@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'package:runtimetogether/main.dart';
 import 'package:http/http.dart' as http;
 import 'package:runtimetogether/states/env.dart';
+
+import 'states/userstate.dart';
 
 class Login extends StatefulWidget {
   @override
@@ -22,6 +25,12 @@ class _Login extends State<Login> {
 
     String user_id = user_idController.text;
     String password = passwordController.text;
+
+    //전역변수 같은 느낌
+    //여기에 어플 전체에서 저장이 필요한 것을 넣는다.
+    final UserState state = Provider.of<UserState>(context, listen: false);
+    state.setId(user_id);
+    state.setPassword(password);
 
     var url = Uri.parse('${Env.URL_PREFIX}/login_user.php');
 

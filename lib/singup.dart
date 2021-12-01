@@ -33,7 +33,7 @@ class _SignUpState extends State<SignUp> {
     String name = nameController.text;
     String email = emailController.text;
     String password = passwordController.text;
-    String phone = passwordController.text;
+    String phone = phoneController.text;
 
     var url = Uri.parse('${Env.URL_PREFIX}/register_user.php');
 

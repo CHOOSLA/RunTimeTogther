@@ -14,6 +14,10 @@ import 'package:runtimetogether/position.dart';
 import 'dart:ui' as ui;
 import 'package:image/image.dart' as image;
 import 'package:runtimetogether/profilepainter.dart';
+import 'package:http/http.dart' as http;
+
+import 'states/env.dart';
+import 'dart:convert';
 
 class MapSample extends StatefulWidget {
   @override
@@ -39,6 +43,8 @@ class MapSampleState extends State<MapSample> {
   @override
   void initState() {
     super.initState();
+
+    _test();
 
     if (defaultTargetPlatform == TargetPlatform.android) {
       locationSettings = AndroidSettings(
@@ -69,6 +75,17 @@ class MapSampleState extends State<MapSample> {
 
     //맵에서 지금 위치 받아오는 것, 이게 실행되면 이제 맵 화면이 보임
     _getCurremtPosition();
+  }
+
+  _test() async {
+    var url = Uri.parse('${Env.URL_PREFIX}/get_friends.php');
+
+    var data = {'userid': 'choochoo'};
+
+    var response = await http.post(url, body: json.encode(data));
+
+    var decoded = json.decode(response.body);
+    print(decoded);
   }
 
   _getCurremtPosition() async {
