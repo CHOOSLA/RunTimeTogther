@@ -36,6 +36,9 @@ dependencies:
   image: ^3.1.0
   angles: ^2.1.1
   image_picker: ^0.8.4
+  workmanager: ^0.4.1
+  flutter_local_notifications: ^9.1.4
+  background_location: ^0.8.1
 
 dev_dependencies:
   flutter_test:

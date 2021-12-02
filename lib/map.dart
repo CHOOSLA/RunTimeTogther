@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:background_location/background_location.dart';
 
 import 'package:runtimetogether/position.dart';
 import 'dart:ui' as ui;
@@ -32,15 +33,21 @@ class MapSampleState extends State<MapSample> {
   Completer<GoogleMapController> _controller = Completer();
   late LocationSettings locationSettings;
 
+  late String _uesrid;
+
   // 위도 경도
   double _latitude = 0.0;
   double _longitude = 0.0;
+  double _speed = 0.0;
 
   //친구들의 위치
   List<Marker> _friendsMarker = [];
 
   //아이콘
   var icon;
+
+  //타이머
+  late Timer _timer;
 
   @override
   void initState() {
@@ -76,7 +83,29 @@ class MapSampleState extends State<MapSample> {
     //  _friends[0].copyWith(positionParam: LatLng(36.7749, 126.9327));
 
     //맵에서 지금 위치 받아오는 것, 이게 실행되면 이제 맵 화면이 보임
+    _BackgroundLocationService();
     _getCurremtPosition();
+
+    const oneSecond = const Duration(seconds: 5);
+    _timer = new Timer.periodic(oneSecond, (Timer t) => setState(() {}));
+  }
+
+  _BackgroundLocationService() async {
+    await BackgroundLocation.setAndroidNotification(
+      title: 'Background service is running',
+      message: 'Background location in progress',
+      icon: '@mipmap/ic_launcher',
+    );
+    //await BackgroundLocation.setAndroidConfiguration(1000);
+    await BackgroundLocation.startLocationService(distanceFilter: 5);
+    BackgroundLocation.getLocationUpdates((location) {
+      setState(() {
+        _latitude = location.latitude!;
+        _longitude = location.longitude!;
+        _speed = location.speed!;
+      });
+      print(_speed);
+    });
   }
 
   _getfriendProfile() async {
@@ -85,6 +114,9 @@ class MapSampleState extends State<MapSample> {
     final UserState state = Provider.of<UserState>(context, listen: false);
 
     var myid = state.id;
+
+    //깔끔하지 못한 코딩 나중에 수정 예정
+    _uesrid = state.id;
 
     var data = {'userid': '$myid'};
 
@@ -104,7 +136,30 @@ class MapSampleState extends State<MapSample> {
     }
   }
 
-  //친구들의 위치를 받아오는 메서드 추가
+  Future<List<Marker>> _refresh() async {
+    //렉을 유발할 수 있음
+    //렉을 줄일려면 _friends에서 직접 latitude를 건들여주어야함
+    print('리프레쉬중...');
+    Position we = await determinePosition();
+    var latitude = we.latitude;
+    var longitude = we.longitude;
+
+    var url = Uri.parse('${Env.URL_PREFIX}/update_gps.php');
+    final UserState state = Provider.of<UserState>(context, listen: false);
+
+    var myid = state.id;
+    var time = DateTime.now().toString();
+
+    var data = {
+      'userid': '$myid',
+      'time': '$time',
+      'latitude': '$latitude',
+      'longitude': '$longitude'
+    };
+    var response = await http.post(url, body: json.encode(data));
+    var message = jsonDecode(response.body);
+    return _getFriends();
+  }
 
   _getCurremtPosition() async {
     Position we = await determinePosition();
@@ -114,7 +169,7 @@ class MapSampleState extends State<MapSample> {
   }
 
   //현재 위치로 돌아오는 기능
-  Future<void> _refresh() async {
+  Future<void> _focus() async {
     _getCurremtPosition();
     final GoogleMapController controller = await _controller.future;
     controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
@@ -122,6 +177,7 @@ class MapSampleState extends State<MapSample> {
   }
 
   Future<List<Marker>> _getFriends() async {
+    print('여기가 계속 실행됩니다');
     var url = Uri.parse('${Env.URL_PREFIX}/get_friends.php');
 
     final UserState state = Provider.of<UserState>(context, listen: false);
@@ -152,7 +208,7 @@ class MapSampleState extends State<MapSample> {
       } else {
         Map tmp = friendGps;
         latitude = double.parse(tmp['latitude']);
-        longitude = double.parse(tmp['logitude']);
+        longitude = double.parse(tmp['longitude']);
       }
 
       //친구들의 정보를 가져온다
@@ -264,13 +320,10 @@ class MapSampleState extends State<MapSample> {
   Future<ui.Image> _loadImage(String blob, int height, int width) async {
     /*
     //매개변수 String userid를 String blob으로 바꿈
-
-
     //서버 통신하는 과정
     var url = Uri.parse('${Env.URL_PREFIX}/get_image.php');
     var data = {'userid': userid};
     var response = await http.post(url, body: json.encode(data));
-
     //서버에서는 이미지가 blob 형식으로 저장되어 있다
     var blob = response.body;
     */
@@ -281,8 +334,6 @@ class MapSampleState extends State<MapSample> {
     /*
     //기존 코드 첫번째 매개변수 String imageAssetPath 를 userid로 바꿈
     //userid를 통해서 서버에 접속해서 blob 이미지를 다운
-
-
     String imageAssetPath = 'assets/london.png';
     final ByteData assetImageByteData = await rootBundle.load(imageAssetPath);
     image.Image? baseSizeImage =
@@ -300,6 +351,24 @@ class MapSampleState extends State<MapSample> {
   }
 
   @override
+  void dispose() {
+    _timer.cancel();
+    deleteMyGps();
+    super.dispose();
+  }
+
+  deleteMyGps() async {
+    var url = Uri.parse('${Env.URL_PREFIX}/delete_gps.php');
+
+    var myid = _uesrid;
+
+    var data = {'userid': '$myid'};
+    var response = await http.post(url, body: json.encode(data));
+    var message = jsonDecode(response.body);
+    print(message);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return new Scaffold(
       body: Center(
@@ -308,7 +377,7 @@ class MapSampleState extends State<MapSample> {
                 color: Colors.green,
               )
             : FutureBuilder(
-                future: _getFriends(),
+                future: _refresh(),
                 builder: (BuildContext context, AsyncSnapshot snapshot) {
                   //해당 부분은 data를 아직 받아 오지 못했을때 실행되는 부분을 의미한다.
                   if (snapshot.hasData == false) {
@@ -329,6 +398,7 @@ class MapSampleState extends State<MapSample> {
                   // 데이터를 정상적으로 받아오게 되면 다음 부분을 실행하게 되는 것이다.
                   else {
                     //이제 여기서 계속 통신 받아서 새로고침
+
                     _friendsMarker = snapshot.data;
                     return GoogleMap(
                       mapType: MapType.normal,
@@ -347,7 +417,7 @@ class MapSampleState extends State<MapSample> {
                 }),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _refresh,
+        onPressed: _focus,
         label: Text('현재 위치로 이동'),
         icon: Icon(Icons.refresh),
       ),
