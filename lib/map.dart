@@ -37,7 +37,7 @@ class MapSampleState extends State<MapSample> {
   double _longitude = 0.0;
 
   //친구들의 위치
-  List<Marker> _friends = [];
+  List<Marker> _friendsMarker = [];
 
   //아이콘
   var icon;
@@ -121,7 +121,7 @@ class MapSampleState extends State<MapSample> {
         zoom: 15, bearing: 0, target: LatLng(_latitude, _longitude))));
   }
 
-  Future<void> _getFriends() async {
+  Future<List<Marker>> _getFriends() async {
     var url = Uri.parse('${Env.URL_PREFIX}/get_friends.php');
 
     final UserState state = Provider.of<UserState>(context, listen: false);
@@ -134,29 +134,52 @@ class MapSampleState extends State<MapSample> {
 
     var decoded = json.decode(response.body);
 
+    List<Marker> friendsMarker = [];
     for (Map freind in decoded) {
+      //서버 통신 부분
       String friendid = freind['friendid'];
-
       var url = Uri.parse('${Env.URL_PREFIX}/get_user.php');
       var data = {'userid': '$friendid'};
       var response = await http.post(url, body: json.encode(data));
       Map friendData = jsonDecode(response.body);
+
+      //프로바이더 갱신 부분
       state.setFriends(friendData);
-      _getProfileImage(friendData['userid']);
+
+      //커스텀 Marker 만드는 부분
+      Uint8List friendicon = await _getFrinedIcon(friendData['image']);
+      friendsMarker.add(new Marker(
+          markerId: MarkerId(friendData['userid']),
+          icon: BitmapDescriptor.fromBytes(friendicon),
+          onTap: () => {print(friendData['username'])},
+          position: LatLng(36.7749, 126.9327)));
     }
+
+    return friendsMarker;
   }
 
   //icon을 클래스내에 저장하는 작업
-  Future<void> _getProfileImage(String userid) async {
-    Uint8List iconUint8List = await getIcon(userid);
+  Future<Uint8List> _getFrinedIcon(String blob) async {
+    Uint8List iconUint8List = await getIcon(blob);
+    return iconUint8List;
   }
 
   //서버에 userid 기반으로 image를 다운 받는다
   //image는 blob상태이다
-  Future<Uint8List> getIcon(String userid) async {
+  Future<Uint8List> getIcon(String blob) async {
     //final Uint8List markerIcon = await getBytesFromAsset('assets/images/flutter.png', 100);
-    final Uint8List markerIcon = await getBytesFromCanvas(userid, 200, 200);
+    final Uint8List markerIcon = await getBytesFromCanvas(blob, 200, 200);
     return markerIcon;
+  }
+
+  //marker 만드는 작업 필요 why? 계속 갱신이 되어야함
+  //동반되어야할 작업 계속 친구들 위치 불러와야함 background
+  Future<Marker> makeMarker(Uint8List iconUint8List) async {
+    return Marker(
+        markerId: MarkerId('1'),
+        icon: BitmapDescriptor.fromBytes(iconUint8List),
+        onTap: () => {print('마커눌림')},
+        position: LatLng(36.7749, 126.9327));
   }
 
   //이미지 불러오기
@@ -172,7 +195,7 @@ class MapSampleState extends State<MapSample> {
 
   //canvas로 그려서 가져오기
   Future<Uint8List> getBytesFromCanvas(
-      String userid, int width, int height) async {
+      String blob, int width, int height) async {
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
     final Paint paint = Paint()..color = Colors.green;
@@ -208,7 +231,7 @@ class MapSampleState extends State<MapSample> {
 
     //여기 수정을해야함
     ProfilePainter profileImage = ProfilePainter(
-        await _loadImage(userid, width - 30, height - 30),
+        await _loadImage(blob, width - 30, height - 30),
         width.toDouble(),
         height.toDouble());
 
@@ -221,7 +244,11 @@ class MapSampleState extends State<MapSample> {
   }
 
   //서버에서 이미지를 받아온다
-  Future<ui.Image> _loadImage(String userid, int height, int width) async {
+  Future<ui.Image> _loadImage(String blob, int height, int width) async {
+    /*
+    //매개변수 String userid를 String blob으로 바꿈
+
+
     //서버 통신하는 과정
     var url = Uri.parse('${Env.URL_PREFIX}/get_image.php');
     var data = {'userid': userid};
@@ -229,6 +256,7 @@ class MapSampleState extends State<MapSample> {
 
     //서버에서는 이미지가 blob 형식으로 저장되어 있다
     var blob = response.body;
+    */
 
     //blob형태를 Uint8List로 바꿔줌
     Uint8List img = base64Decode(blob);
@@ -284,11 +312,7 @@ class MapSampleState extends State<MapSample> {
                   // 데이터를 정상적으로 받아오게 되면 다음 부분을 실행하게 되는 것이다.
                   else {
                     //이제 여기서 계속 통신 받아서 새로고침
-                    _friends.add(new Marker(
-                        markerId: MarkerId('1'),
-                        icon: BitmapDescriptor.fromBytes(snapshot.data),
-                        onTap: () => {print('마커눌림')},
-                        position: LatLng(36.7749, 126.9327)));
+                    _friendsMarker = snapshot.data;
                     return GoogleMap(
                       mapType: MapType.normal,
                       initialCameraPosition: CameraPosition(
@@ -300,7 +324,7 @@ class MapSampleState extends State<MapSample> {
                       },
                       myLocationEnabled: true,
                       myLocationButtonEnabled: false,
-                      markers: Set.from(_friends),
+                      markers: Set.from(_friendsMarker),
                     );
                   }
                 }),
