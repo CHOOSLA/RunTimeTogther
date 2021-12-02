@@ -92,8 +92,9 @@ class MapSampleState extends State<MapSample> {
 
     var decoded = json.decode(response.body);
 
-    for (Map item in decoded) {
-      String friendid = item['friendid'];
+    //여기서 친구들의 위치 정보도 받아와야함
+    for (Map freind in decoded) {
+      String friendid = freind['friendid'];
 
       var url = Uri.parse('${Env.URL_PREFIX}/get_user.php');
       var data = {'userid': '$friendid'};
@@ -102,6 +103,8 @@ class MapSampleState extends State<MapSample> {
       print(message);
     }
   }
+
+  //친구들의 위치를 받아오는 메서드 추가
 
   _getCurremtPosition() async {
     Position we = await determinePosition();
@@ -118,10 +121,41 @@ class MapSampleState extends State<MapSample> {
         zoom: 15, bearing: 0, target: LatLng(_latitude, _longitude))));
   }
 
-  //이제 여기 수정을 해야함
-  Future<Uint8List> getIcon() async {
+  Future<void> _getFriends() async {
+    var url = Uri.parse('${Env.URL_PREFIX}/get_friends.php');
+
+    final UserState state = Provider.of<UserState>(context, listen: false);
+
+    var myid = state.id;
+
+    var data = {'userid': '$myid'};
+
+    var response = await http.post(url, body: json.encode(data));
+
+    var decoded = json.decode(response.body);
+
+    for (Map freind in decoded) {
+      String friendid = freind['friendid'];
+
+      var url = Uri.parse('${Env.URL_PREFIX}/get_user.php');
+      var data = {'userid': '$friendid'};
+      var response = await http.post(url, body: json.encode(data));
+      Map friendData = jsonDecode(response.body);
+      state.setFriends(friendData);
+      _getProfileImage(friendData['userid']);
+    }
+  }
+
+  //icon을 클래스내에 저장하는 작업
+  Future<void> _getProfileImage(String userid) async {
+    Uint8List iconUint8List = await getIcon(userid);
+  }
+
+  //서버에 userid 기반으로 image를 다운 받는다
+  //image는 blob상태이다
+  Future<Uint8List> getIcon(String userid) async {
     //final Uint8List markerIcon = await getBytesFromAsset('assets/images/flutter.png', 100);
-    final Uint8List markerIcon = await getBytesFromCanvas(200, 200);
+    final Uint8List markerIcon = await getBytesFromCanvas(userid, 200, 200);
     return markerIcon;
   }
 
@@ -137,7 +171,8 @@ class MapSampleState extends State<MapSample> {
   }
 
   //canvas로 그려서 가져오기
-  Future<Uint8List> getBytesFromCanvas(int width, int height) async {
+  Future<Uint8List> getBytesFromCanvas(
+      String userid, int width, int height) async {
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
     final Paint paint = Paint()..color = Colors.green;
@@ -173,7 +208,7 @@ class MapSampleState extends State<MapSample> {
 
     //여기 수정을해야함
     ProfilePainter profileImage = ProfilePainter(
-        await _loadImage('assets/london.jpg', width - 30, height - 30),
+        await _loadImage(userid, width - 30, height - 30),
         width.toDouble(),
         height.toDouble());
 
@@ -185,11 +220,32 @@ class MapSampleState extends State<MapSample> {
     return data!.buffer.asUint8List();
   }
 
-  Future<ui.Image> _loadImage(
-      String imageAssetPath, int height, int width) async {
+  //서버에서 이미지를 받아온다
+  Future<ui.Image> _loadImage(String userid, int height, int width) async {
+    //서버 통신하는 과정
+    var url = Uri.parse('${Env.URL_PREFIX}/get_image.php');
+    var data = {'userid': userid};
+    var response = await http.post(url, body: json.encode(data));
+
+    //서버에서는 이미지가 blob 형식으로 저장되어 있다
+    var blob = response.body;
+
+    //blob형태를 Uint8List로 바꿔줌
+    Uint8List img = base64Decode(blob);
+
+    /*
+    //기존 코드 첫번째 매개변수 String imageAssetPath 를 userid로 바꿈
+    //userid를 통해서 서버에 접속해서 blob 이미지를 다운
+
+
+    String imageAssetPath = 'assets/london.png';
     final ByteData assetImageByteData = await rootBundle.load(imageAssetPath);
     image.Image? baseSizeImage =
         image.decodeImage(assetImageByteData.buffer.asUint8List());
+    */
+
+    //이미지를 resize하는 과정
+    image.Image? baseSizeImage = image.decodeImage(img);
     image.Image resizeImage =
         image.copyResize(baseSizeImage!, height: height, width: width);
     ui.Codec codec = await ui.instantiateImageCodec(
@@ -207,7 +263,7 @@ class MapSampleState extends State<MapSample> {
                 color: Colors.green,
               )
             : FutureBuilder(
-                future: getIcon(),
+                future: _getFriends(),
                 builder: (BuildContext context, AsyncSnapshot snapshot) {
                   //해당 부분은 data를 아직 받아 오지 못했을때 실행되는 부분을 의미한다.
                   if (snapshot.hasData == false) {

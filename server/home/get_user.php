@@ -11,13 +11,9 @@ $query = "select * from user where userid = '$userid';";
 
 $result = mysqli_query($db,$query);
 
+$userdata = mysqli_fetch_array($result,MYSQLI_ASSOC);
 
-$iamge_list = array();
-while($row = mysqli_fetch_array($result,MYSQLI_ASSOC)){
-    $image_list[] = $row;
-}
-
-echo json_encode($image_list);
+echo json_encode($userdata);
 
 mysqli_close($db);
 
