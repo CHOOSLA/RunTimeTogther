@@ -32,6 +32,7 @@ class _RunTimeTogetherState extends State<RunTimeTogether> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'RunTimeTogether',
       debugShowMaterialGrid: false,
       initialRoute: ROOT_PAGE,
