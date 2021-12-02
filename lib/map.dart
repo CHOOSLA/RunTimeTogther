@@ -34,6 +34,8 @@ class MapSampleState extends State<MapSample> {
   Completer<GoogleMapController> _controller = Completer();
   late LocationSettings locationSettings;
 
+  late String _uesrid;
+
   // 위도 경도
   double _latitude = 0.0;
   double _longitude = 0.0;
@@ -44,6 +46,9 @@ class MapSampleState extends State<MapSample> {
 
   //아이콘
   var icon;
+
+  //타이머
+  late Timer _timer;
 
   @override
   void initState() {
@@ -83,7 +88,26 @@ class MapSampleState extends State<MapSample> {
     _getCurremtPosition();
 
     const oneSecond = const Duration(seconds: 5);
-    new Timer.periodic(oneSecond, (Timer t) => setState(() {}));
+
+    _timer = new Timer.periodic(oneSecond, (Timer t) => setState(() {}));
+  }
+
+  _BackgroundLocationService() async {
+    await BackgroundLocation.setAndroidNotification(
+      title: 'Background service is running',
+      message: 'Background location in progress',
+      icon: '@mipmap/ic_launcher',
+    );
+    //await BackgroundLocation.setAndroidConfiguration(1000);
+    await BackgroundLocation.startLocationService(distanceFilter: 5);
+    BackgroundLocation.getLocationUpdates((location) {
+      setState(() {
+        _latitude = location.latitude!;
+        _longitude = location.longitude!;
+        _speed = location.speed!;
+      });
+      print(_speed);
+    });
   }
 
   _BackgroundLocationService() async {
@@ -110,6 +134,9 @@ class MapSampleState extends State<MapSample> {
     final UserState state = Provider.of<UserState>(context, listen: false);
 
     var myid = state.id;
+
+    //깔끔하지 못한 코딩 나중에 수정 예정
+    _uesrid = state.id;
 
     var data = {'userid': '$myid'};
 
@@ -344,6 +371,24 @@ class MapSampleState extends State<MapSample> {
   }
 
   @override
+  void dispose() {
+    _timer.cancel();
+    deleteMyGps();
+    super.dispose();
+  }
+
+  deleteMyGps() async {
+    var url = Uri.parse('${Env.URL_PREFIX}/delete_gps.php');
+
+    var myid = _uesrid;
+
+    var data = {'userid': '$myid'};
+    var response = await http.post(url, body: json.encode(data));
+    var message = jsonDecode(response.body);
+    print(message);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return new Scaffold(
       body: Center(
@@ -396,7 +441,7 @@ class MapSampleState extends State<MapSample> {
               Align(
             alignment: Alignment(0,0.8),
             child: FloatingActionButton.extended(
-              onPressed: _refresh,
+              onPressed: _focus,
               label: Text('현재 위치로 이동'),
               icon: Icon(Icons.refresh),
             ),
