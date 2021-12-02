@@ -9,12 +9,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:provider/provider.dart';
 
 import 'package:runtimetogether/position.dart';
 import 'dart:ui' as ui;
 import 'package:image/image.dart' as image;
 import 'package:runtimetogether/profilepainter.dart';
 import 'package:http/http.dart' as http;
+import 'package:runtimetogether/states/userstate.dart';
 
 import 'states/env.dart';
 import 'dart:convert';
@@ -44,7 +46,7 @@ class MapSampleState extends State<MapSample> {
   void initState() {
     super.initState();
 
-    _test();
+    _getfriendProfile();
 
     if (defaultTargetPlatform == TargetPlatform.android) {
       locationSettings = AndroidSettings(
@@ -77,15 +79,28 @@ class MapSampleState extends State<MapSample> {
     _getCurremtPosition();
   }
 
-  _test() async {
+  _getfriendProfile() async {
     var url = Uri.parse('${Env.URL_PREFIX}/get_friends.php');
 
-    var data = {'userid': 'choochoo'};
+    final UserState state = Provider.of<UserState>(context, listen: false);
+
+    var myid = state.id;
+
+    var data = {'userid': '$myid'};
 
     var response = await http.post(url, body: json.encode(data));
 
     var decoded = json.decode(response.body);
-    print(decoded);
+
+    for (Map item in decoded) {
+      String friendid = item['friendid'];
+
+      var url = Uri.parse('${Env.URL_PREFIX}/get_user.php');
+      var data = {'userid': '$friendid'};
+      var response = await http.post(url, body: json.encode(data));
+      var message = jsonDecode(response.body);
+      print(message);
+    }
   }
 
   _getCurremtPosition() async {
@@ -95,6 +110,7 @@ class MapSampleState extends State<MapSample> {
     setState(() {});
   }
 
+  //현재 위치로 돌아오는 기능
   Future<void> _refresh() async {
     _getCurremtPosition();
     final GoogleMapController controller = await _controller.future;
@@ -102,6 +118,7 @@ class MapSampleState extends State<MapSample> {
         zoom: 15, bearing: 0, target: LatLng(_latitude, _longitude))));
   }
 
+  //이제 여기 수정을 해야함
   Future<Uint8List> getIcon() async {
     //final Uint8List markerIcon = await getBytesFromAsset('assets/images/flutter.png', 100);
     final Uint8List markerIcon = await getBytesFromCanvas(200, 200);
@@ -154,6 +171,7 @@ class MapSampleState extends State<MapSample> {
           ..color = Colors.green
           ..style = PaintingStyle.fill);
 
+    //여기 수정을해야함
     ProfilePainter profileImage = ProfilePainter(
         await _loadImage('assets/london.jpg', width - 30, height - 30),
         width.toDouble(),

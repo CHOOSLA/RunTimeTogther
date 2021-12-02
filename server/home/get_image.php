@@ -7,17 +7,15 @@ $obj = json_decode($json,true);
 
 $userid = $obj['userid'];
 
-$query = "select friendid from friend where userid = '$userid';";
+$query = "select image from user where userid = '$userid';";
 
 $result = mysqli_query($db,$query);
 
 
-$friend_list = array();
+$iamge_list = array();
 while($row = mysqli_fetch_array($result,MYSQLI_ASSOC)){
-    $friend_list[] = $row;
+    echo $row;
 }
-
-echo json_encode($friend_list);
 
 mysqli_close($db);
 
