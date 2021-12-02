@@ -138,10 +138,27 @@ class MapSampleState extends State<MapSample> {
     for (Map freind in decoded) {
       //서버 통신 부분
       String friendid = freind['friendid'];
-      var url = Uri.parse('${Env.URL_PREFIX}/get_user.php');
       var data = {'userid': '$friendid'};
-      var response = await http.post(url, body: json.encode(data));
-      Map friendData = jsonDecode(response.body);
+
+      //친구들의 위치를 가져온다 and 온라인인지 확인
+      double latitude = 0.0;
+      double longitude = 0.0;
+
+      var url1 = Uri.parse('${Env.URL_PREFIX}/get_currentgps.php');
+      var response1 = await http.post(url1, body: json.encode(data));
+      var friendGps = jsonDecode(response1.body);
+      if (friendGps == '현재 로그인 중이 아님') {
+        continue;
+      } else {
+        Map tmp = friendGps;
+        latitude = double.parse(tmp['latitude']);
+        longitude = double.parse(tmp['logitude']);
+      }
+
+      //친구들의 정보를 가져온다
+      var url2 = Uri.parse('${Env.URL_PREFIX}/get_user.php');
+      var response2 = await http.post(url2, body: json.encode(data));
+      Map friendData = jsonDecode(response2.body);
 
       //프로바이더 갱신 부분
       state.setFriends(friendData);
@@ -152,7 +169,7 @@ class MapSampleState extends State<MapSample> {
           markerId: MarkerId(friendData['userid']),
           icon: BitmapDescriptor.fromBytes(friendicon),
           onTap: () => {print(friendData['username'])},
-          position: LatLng(36.7749, 126.9327)));
+          position: LatLng(latitude, longitude)));
     }
 
     return friendsMarker;
