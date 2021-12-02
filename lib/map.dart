@@ -108,6 +108,24 @@ class MapSampleState extends State<MapSample> {
     });
   }
 
+  _BackgroundLocationService() async {
+    await BackgroundLocation.setAndroidNotification(
+      title: 'Background service is running',
+      message: 'Background location in progress',
+      icon: '@mipmap/ic_launcher',
+    );
+    //await BackgroundLocation.setAndroidConfiguration(1000);
+    await BackgroundLocation.startLocationService(distanceFilter: 5);
+    BackgroundLocation.getLocationUpdates((location) {
+      setState(() {
+        _latitude = location.latitude!;
+        _longitude = location.longitude!;
+        _speed = location.speed!;
+      });
+      print(_speed);
+    });
+  }
+
   _getfriendProfile() async {
     var url = Uri.parse('${Env.URL_PREFIX}/get_friends.php');
 
