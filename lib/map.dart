@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:background_location/background_location.dart';
 
 import 'package:runtimetogether/position.dart';
 import 'dart:ui' as ui;
@@ -35,6 +36,7 @@ class MapSampleState extends State<MapSample> {
   // 위도 경도
   double _latitude = 0.0;
   double _longitude = 0.0;
+  double _speed = 0.0;
 
   //친구들의 위치
   List<Marker> _friendsMarker = [];
@@ -76,7 +78,26 @@ class MapSampleState extends State<MapSample> {
     //  _friends[0].copyWith(positionParam: LatLng(36.7749, 126.9327));
 
     //맵에서 지금 위치 받아오는 것, 이게 실행되면 이제 맵 화면이 보임
+    _BackgroundLocationService();
     _getCurremtPosition();
+  }
+
+  _BackgroundLocationService() async {
+    await BackgroundLocation.setAndroidNotification(
+      title: 'Background service is running',
+      message: 'Background location in progress',
+      icon: '@mipmap/ic_launcher',
+    );
+    //await BackgroundLocation.setAndroidConfiguration(1000);
+    await BackgroundLocation.startLocationService(distanceFilter: 5);
+    BackgroundLocation.getLocationUpdates((location) {
+      setState(() {
+        _latitude = location.latitude!;
+        _longitude = location.longitude!;
+        _speed = location.speed!;
+      });
+      print(_speed);
+    });
   }
 
   _getfriendProfile() async {
@@ -264,13 +285,10 @@ class MapSampleState extends State<MapSample> {
   Future<ui.Image> _loadImage(String blob, int height, int width) async {
     /*
     //매개변수 String userid를 String blob으로 바꿈
-
-
     //서버 통신하는 과정
     var url = Uri.parse('${Env.URL_PREFIX}/get_image.php');
     var data = {'userid': userid};
     var response = await http.post(url, body: json.encode(data));
-
     //서버에서는 이미지가 blob 형식으로 저장되어 있다
     var blob = response.body;
     */
@@ -281,8 +299,6 @@ class MapSampleState extends State<MapSample> {
     /*
     //기존 코드 첫번째 매개변수 String imageAssetPath 를 userid로 바꿈
     //userid를 통해서 서버에 접속해서 blob 이미지를 다운
-
-
     String imageAssetPath = 'assets/london.png';
     final ByteData assetImageByteData = await rootBundle.load(imageAssetPath);
     image.Image? baseSizeImage =
