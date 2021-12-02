@@ -50,11 +50,12 @@ class MapSampleState extends State<MapSample> {
   //타이머
   late Timer _timer;
 
+  bool _isCenter = true;
+  bool _isFocus = false;
+
   @override
   void initState() {
     super.initState();
-
-    _getfriendProfile();
 
     if (defaultTargetPlatform == TargetPlatform.android) {
       locationSettings = AndroidSettings(
@@ -150,6 +151,7 @@ class MapSampleState extends State<MapSample> {
     final UserState state = Provider.of<UserState>(context, listen: false);
 
     var myid = state.id;
+    _uesrid = state.id;
     var time = DateTime.now().toString();
 
     var data = {
@@ -172,10 +174,18 @@ class MapSampleState extends State<MapSample> {
 
   //현재 위치로 돌아오는 기능
   Future<void> _focus() async {
+    _isFocus = true;
     _getCurremtPosition();
     final GoogleMapController controller = await _controller.future;
     controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
         zoom: 15, bearing: 0, target: LatLng(_latitude, _longitude))));
+    _isCenter = true;
+    setState(() {});
+  }
+
+  //뛰기시작
+  _run() {
+    print('테스트');
   }
 
   Future<List<Marker>> _getFriends() async {
@@ -378,33 +388,32 @@ class MapSampleState extends State<MapSample> {
             ? new CircularProgressIndicator(
                 color: Colors.green,
               )
-            : Stack(
-              children:[ Container(
-                child: FutureBuilder(
-                    future: _refresh(),
-                    builder: (BuildContext context, AsyncSnapshot snapshot) {
-                      //해당 부분은 data를 아직 받아 오지 못했을때 실행되는 부분을 의미한다.
-                      if (snapshot.hasData == false) {
-                        return CircularProgressIndicator(
-                          color: Colors.greenAccent,
-                        );
-                      }
-                      //error가 발생하게 될 경우 반환하게 되는 부분
-                      else if (snapshot.hasError) {
-                        return Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            'Error: ${snapshot.error}',
-                            style: TextStyle(fontSize: 15),
-                          ),
-                        );
-                      }
-                      // 데이터를 정상적으로 받아오게 되면 다음 부분을 실행하게 되는 것이다.
-                      else {
-                        //이제 여기서 계속 통신 받아서 새로고침
-            
-                        _friendsMarker = snapshot.data;
-                        return GoogleMap(
+            : FutureBuilder(
+                future: _refresh(),
+                builder: (BuildContext context, AsyncSnapshot snapshot) {
+                  //해당 부분은 data를 아직 받아 오지 못했을때 실행되는 부분을 의미한다.
+                  if (snapshot.hasData == false) {
+                    return CircularProgressIndicator(
+                      color: Colors.greenAccent,
+                    );
+                  }
+                  //error가 발생하게 될 경우 반환하게 되는 부분
+                  else if (snapshot.hasError) {
+                    return Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        'Error: ${snapshot.error}',
+                        style: TextStyle(fontSize: 15),
+                      ),
+                    );
+                  }
+                  // 데이터를 정상적으로 받아오게 되면 다음 부분을 실행하게 되는 것이다.
+                  else {
+                    //이제 여기서 계속 통신 받아서 새로고침
+                    _friendsMarker = snapshot.data;
+                    return Stack(
+                      children: [
+                        GoogleMap(
                           mapType: MapType.normal,
                           initialCameraPosition: CameraPosition(
                               zoom: 15,
@@ -416,34 +425,56 @@ class MapSampleState extends State<MapSample> {
                           myLocationEnabled: true,
                           myLocationButtonEnabled: false,
                           markers: Set.from(_friendsMarker),
-                        );
-                      }
-                    }),
-              ),
-              Align(
-            alignment: Alignment(0,0.8),
-            child: FloatingActionButton.extended(
-              onPressed: _focus,
-              label: Text('현재 위치로 이동'),
-              icon: Icon(Icons.refresh),
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomLeft,
-            child: FloatingActionButton(
-              onPressed: () {}, 
-              child: Icon(Icons.access_time)),
-          ),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: FloatingActionButton(
-              onPressed: () {
-                Navigator.push(
-                  context,MaterialPageRoute(builder: (context) => Chat()),);
-              }, 
-              child: Icon(Icons.chat)),
-          ),]
-            ),
+                          onCameraMoveStarted: () {
+                            if (!_isFocus) {
+                              _isCenter = false;
+                            }
+                            print('화면이동');
+
+                            setState(() {});
+                          },
+                          onCameraIdle: () {
+                            if (_isFocus) {
+                              _isFocus = false;
+                            }
+                            print('쉼');
+                            if (_isCenter) {}
+                            //_isCenter = false;
+                            setState(() {});
+                          },
+                          zoomControlsEnabled: false,
+                        ),
+                        Align(
+                          alignment: Alignment(0, 0.8),
+                          child: FloatingActionButton.extended(
+                            onPressed: _isCenter ? _run : _focus,
+                            label: _isCenter ? Text('뛰기') : Text('현재 위치로 이동'),
+                            icon: _isCenter
+                                ? Icon(Icons.run_circle_outlined)
+                                : Icon(Icons.refresh),
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.bottomLeft,
+                          child: FloatingActionButton(
+                              onPressed: () {}, child: Icon(Icons.access_time)),
+                        ),
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: FloatingActionButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => Chat()),
+                                );
+                              },
+                              child: Icon(Icons.chat)),
+                        ),
+                      ],
+                    );
+                  }
+                }),
       ),
     );
   }

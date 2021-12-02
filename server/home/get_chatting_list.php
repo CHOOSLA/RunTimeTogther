@@ -10,7 +10,7 @@ $user_id = $obj['user_id'];
 
 
 //Applying User Login query with email and password.
-$loginQuery = "select * from chatting where userid ='$user_id' OR friendid ='$user_id';";
+$loginQuery = "select * from chatting where userid ='$user_id' OR friendid ='$user_id' order by time asc;";
 
 $result = mysqli_query($db,$loginQuery);
 
