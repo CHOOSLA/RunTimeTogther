@@ -19,6 +19,7 @@ import 'package:runtimetogether/profilepainter.dart';
 import 'package:http/http.dart' as http;
 import 'package:runtimetogether/states/userstate.dart';
 
+import 'chat.dart';
 import 'states/env.dart';
 import 'dart:convert';
 
@@ -87,6 +88,7 @@ class MapSampleState extends State<MapSample> {
     _getCurremtPosition();
 
     const oneSecond = const Duration(seconds: 5);
+
     _timer = new Timer.periodic(oneSecond, (Timer t) => setState(() {}));
   }
 
@@ -394,50 +396,72 @@ class MapSampleState extends State<MapSample> {
             ? new CircularProgressIndicator(
                 color: Colors.green,
               )
-            : FutureBuilder(
-                future: _refresh(),
-                builder: (BuildContext context, AsyncSnapshot snapshot) {
-                  //해당 부분은 data를 아직 받아 오지 못했을때 실행되는 부분을 의미한다.
-                  if (snapshot.hasData == false) {
-                    return CircularProgressIndicator(
-                      color: Colors.greenAccent,
-                    );
-                  }
-                  //error가 발생하게 될 경우 반환하게 되는 부분
-                  else if (snapshot.hasError) {
-                    return Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        'Error: ${snapshot.error}',
-                        style: TextStyle(fontSize: 15),
-                      ),
-                    );
-                  }
-                  // 데이터를 정상적으로 받아오게 되면 다음 부분을 실행하게 되는 것이다.
-                  else {
-                    //이제 여기서 계속 통신 받아서 새로고침
-
-                    _friendsMarker = snapshot.data;
-                    return GoogleMap(
-                      mapType: MapType.normal,
-                      initialCameraPosition: CameraPosition(
-                          zoom: 15,
-                          bearing: 0,
-                          target: LatLng(_latitude, _longitude)),
-                      onMapCreated: (GoogleMapController controller) {
-                        _controller.complete(controller);
-                      },
-                      myLocationEnabled: true,
-                      myLocationButtonEnabled: false,
-                      markers: Set.from(_friendsMarker),
-                    );
-                  }
-                }),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _focus,
-        label: Text('현재 위치로 이동'),
-        icon: Icon(Icons.refresh),
+            : Stack(
+              children:[ Container(
+                child: FutureBuilder(
+                    future: _refresh(),
+                    builder: (BuildContext context, AsyncSnapshot snapshot) {
+                      //해당 부분은 data를 아직 받아 오지 못했을때 실행되는 부분을 의미한다.
+                      if (snapshot.hasData == false) {
+                        return CircularProgressIndicator(
+                          color: Colors.greenAccent,
+                        );
+                      }
+                      //error가 발생하게 될 경우 반환하게 되는 부분
+                      else if (snapshot.hasError) {
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            'Error: ${snapshot.error}',
+                            style: TextStyle(fontSize: 15),
+                          ),
+                        );
+                      }
+                      // 데이터를 정상적으로 받아오게 되면 다음 부분을 실행하게 되는 것이다.
+                      else {
+                        //이제 여기서 계속 통신 받아서 새로고침
+            
+                        _friendsMarker = snapshot.data;
+                        return GoogleMap(
+                          mapType: MapType.normal,
+                          initialCameraPosition: CameraPosition(
+                              zoom: 15,
+                              bearing: 0,
+                              target: LatLng(_latitude, _longitude)),
+                          onMapCreated: (GoogleMapController controller) {
+                            _controller.complete(controller);
+                          },
+                          myLocationEnabled: true,
+                          myLocationButtonEnabled: false,
+                          markers: Set.from(_friendsMarker),
+                        );
+                      }
+                    }),
+              ),
+              Align(
+            alignment: Alignment(0,0.8),
+            child: FloatingActionButton.extended(
+              onPressed: _focus,
+              label: Text('현재 위치로 이동'),
+              icon: Icon(Icons.refresh),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomLeft,
+            child: FloatingActionButton(
+              onPressed: () {}, 
+              child: Icon(Icons.access_time)),
+          ),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,MaterialPageRoute(builder: (context) => Chat()),);
+              }, 
+              child: Icon(Icons.chat)),
+          ),]
+            ),
       ),
     );
   }
