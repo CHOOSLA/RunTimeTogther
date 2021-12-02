@@ -25,7 +25,7 @@ class _Chattingroom extends State<Chattingroom> {
     String user_id = user_idController.text;
 
     var url =
-        Uri.parse('http://152.70.93.137/login_user.php'); //////////////////////
+        Uri.parse('http://220.69.208.121/get_chatting_list.php'); //////////////////////
 
     var data = {'user_id': user_id};
 
@@ -56,66 +56,32 @@ class _Chattingroom extends State<Chattingroom> {
                 },
               ),
               SizedBox(width: 70),
-              Image.asset('images/logo1.png'),
-              SizedBox(width: 150),
+              Image.asset('assets/images/logo1.png'),
+              SizedBox(
+                width: 150,
+              ),
             ]),
 
 
-        body: Stack(
-        children: <Widget>[
-          Container(
+        body: Container(
             child: FutureBuilder<List<Map<String, dynamic>>?>(
           future: chatting(),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
-              return  ListView.separated(
+              return ListView.builder(
                   scrollDirection: Axis.vertical,
                   shrinkWrap: true,
                   itemCount: a.length,
-                  itemBuilder:(context, index) {
+                  itemBuilder: (context, index) {
                     return sendMessage(snapshot, index, context);
-                  }, separatorBuilder: (BuildContext context, int index) { return Divider(thickness: 1);},);
+                  });
             } else if (snapshot.hasError) {
               return Text('${snapshot.error}');
             }
               // 기본적으로 로딩 Spinner를 보여줍니다.
               return CircularProgressIndicator();
           }
-        )),
-          Align(
-            alignment: Alignment.bottomLeft,
-            child: Container(
-              padding: EdgeInsets.only(left: 10,bottom: 10,top: 10),
-              height: 60,
-              width: double.infinity,
-              color: Colors.white,
-              child: Row(
-                children: <Widget>[
-                  SizedBox(width: 15,),
-                  Expanded(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: "Send message",
-                        hintStyle: TextStyle(color: Colors.black54),
-                        border: InputBorder.none
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 15,),
-                  FloatingActionButton(
-                    onPressed: (){},
-                    child: Icon(Icons.send,color: Colors.white,size: 23,),
-                    backgroundColor: Colors.green[900],
-                    elevation: 0,
-                  ),
-                ],
-                
-              ),
-            ),
-          ),
-        ],
-      ),
-        );
+        )));
   }
 
   Widget sendMessage(AsyncSnapshot snapshot, int index, BuildContext context) {

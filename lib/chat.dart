@@ -42,11 +42,18 @@ class _Chat extends State<Chat> {
     return Scaffold(
         appBar: AppBar(
             automaticallyImplyLeading: false,
-            backgroundColor: Color(0xfff4fef2),
+            backgroundColor: Colors.green[100],
             centerTitle: true,
             toolbarHeight: 70,
             actions: <Widget>[
-              SizedBox(width: 10),
+              IconButton(
+                iconSize: 50,
+                icon: Icon(Icons.navigate_before),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+              SizedBox(width: 70),
               Image.asset('assets/images/logo1.png'),
               SizedBox(width: 150),
             ]),
@@ -68,8 +75,7 @@ class _Chat extends State<Chat> {
               // 기본적으로 로딩 Spinner를 보여줍니다.
               return CircularProgressIndicator();
           }
-        ))
-        );
+        )));
   }
 
   Widget makePost(AsyncSnapshot snapshot, int index, BuildContext context) {

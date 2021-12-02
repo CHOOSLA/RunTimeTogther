@@ -36,6 +36,7 @@ dependencies:
   image: ^3.1.0
   angles: ^2.1.1
   image_picker: ^0.8.4
+  background_location: ^0.8.1
 
 dev_dependencies:
   flutter_test:
