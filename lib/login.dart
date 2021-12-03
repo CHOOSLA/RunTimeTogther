@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:runtimetogether/main.dart';
 import 'package:http/http.dart' as http;
 import 'package:runtimetogether/states/env.dart';
+import 'package:runtimetogether/withdrawal.dart';
 
 import 'states/userstate.dart';
 
@@ -68,6 +69,49 @@ class _Login extends State<Login> {
         },
       );
     }
+  }
+
+  Future withdrawal() async {
+    setState(() {
+      visible = true;
+    });
+
+    String user_id = user_idController.text;
+    String password = passwordController.text;
+
+    var url = Uri.parse('${Env.URL_PREFIX}/delete_user.php');
+
+    var data = {
+      'userid': user_id,
+      'password': password,
+    };
+
+    var response = await http.post(url, body: json.encode(data));
+
+    var message = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      setState(() {
+        visible = false;
+      });
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: new Text(message),
+          actions: <Widget>[
+            TextButton(
+              child: new Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -157,6 +201,20 @@ class _Login extends State<Login> {
                                     )),
                                 onPressed: () {
                                   Navigator.pushNamed(context, SING_UP_PAGE);
+                                },
+                              ),
+                              SizedBox(height: 15),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  primary: Color(0xffB0C5B2),
+                                  minimumSize: Size(250, 55),
+                                ),
+                                child: const Text('회원탈퇴',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                    )),
+                                onPressed: () {
+                                  withdrawal();
                                 },
                               ),
                             ],

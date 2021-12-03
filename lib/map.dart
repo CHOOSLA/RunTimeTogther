@@ -11,6 +11,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:background_location/background_location.dart';
+import 'package:runtimetogether/addfriend.dart';
 
 import 'package:runtimetogether/position.dart';
 import 'dart:ui' as ui;
@@ -19,6 +20,7 @@ import 'package:runtimetogether/profilepainter.dart';
 import 'package:http/http.dart' as http;
 import 'package:runtimetogether/runmodal.dart';
 import 'package:runtimetogether/states/userstate.dart';
+import 'package:runtimetogether/withdrawal.dart';
 
 import 'chat.dart';
 import 'states/env.dart';
@@ -609,20 +611,33 @@ class MapSampleState extends State<MapSample> {
                         ),
                         Align(
                           alignment: Alignment.bottomLeft,
-                          child: FloatingActionButton(
-                              onPressed: () {}, child: Icon(Icons.access_time)),
+                          child: Container(
+                            padding: EdgeInsets.all(10),
+                            child: FloatingActionButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => AddFriend()),
+                                  );
+                                },
+                                child: Icon(Icons.add)),
+                          ),
                         ),
                         Align(
                           alignment: Alignment.bottomRight,
-                          child: FloatingActionButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => Chat()),
-                                );
-                              },
-                              child: Icon(Icons.chat)),
+                          child: Container(
+                            padding: EdgeInsets.all(10),
+                            child: FloatingActionButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => Chat()),
+                                  );
+                                },
+                                child: Icon(Icons.chat)),
+                          ),
                         ),
                       ],
                     );
