@@ -136,7 +136,7 @@ class _AddFriend extends State<AddFriend> {
                                   primary: Color(0xff45983f),
                                   minimumSize: Size(250, 55),
                                 ),
-                                child: const Text('로그인',
+                                child: const Text('친구추가',
                                     style: TextStyle(
                                       fontSize: 20,
                                     )),

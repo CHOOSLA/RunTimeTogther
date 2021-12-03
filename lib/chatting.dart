@@ -24,18 +24,17 @@ class _Chattingroom extends State<Chattingroom> {
 
     String user_id = user_idController.text;
 
-    var url =
-        Uri.parse('http://220.69.208.121/get_chatting_list.php'); //////////////////////
+    var url = Uri.parse('http://220.69.208.121/get_chatting_list.php');
 
-    var data = {'user_id': user_id};
+    var data = {'user_id': 'choochoo'};
 
     var response = await http.post(url, body: json.encode(data));
 
-    var message = jsonDecode(response.body);
+    var message = jsonDecode(utf8.decode(response.bodyBytes));
+    print(message.toString());
     for (var data in message) {
       a.add(data);
     }
-    a = a.reversed.toList();
     return a;
   }
 
@@ -61,53 +60,95 @@ class _Chattingroom extends State<Chattingroom> {
                 width: 150,
               ),
             ]),
-
-
-        body: Container(
-            child: FutureBuilder<List<Map<String, dynamic>>?>(
-          future: chatting(),
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              return ListView.builder(
-                  scrollDirection: Axis.vertical,
-                  shrinkWrap: true,
-                  itemCount: a.length,
-                  itemBuilder: (context, index) {
-                    return sendMessage(snapshot, index, context);
-                  });
-            } else if (snapshot.hasError) {
-              return Text('${snapshot.error}');
-            }
-              // 기본적으로 로딩 Spinner를 보여줍니다.
-              return CircularProgressIndicator();
-          }
-        )));
+        body: Stack(children: [
+          Container(
+              child: FutureBuilder<List<Map<String, dynamic>>?>(
+                  future: chatting(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return ListView.builder(
+                          scrollDirection: Axis.vertical,
+                          shrinkWrap: true,
+                          itemCount: a.length,
+                          padding: EdgeInsets.only(top: 10, bottom: 10),
+                          physics: NeverScrollableScrollPhysics(),
+                          itemBuilder: (context, index) {
+                            return sendMessage(snapshot, index, context);
+                          });
+                    } else if (snapshot.hasError) {
+                      return Text('${snapshot.error}');
+                    }
+                    // 기본적으로 로딩 Spinner를 보여줍니다.
+                    return CircularProgressIndicator();
+                  })),
+          Align(
+            alignment: Alignment.bottomLeft,
+            child: Container(
+              padding: EdgeInsets.only(left: 10, bottom: 10, top: 10),
+              height: 60,
+              width: double.infinity,
+              color: Colors.white,
+              child: Row(
+                children: <Widget>[
+                  SizedBox(
+                    width: 15,
+                  ),
+                  Expanded(
+                    child: TextField(
+                      decoration: InputDecoration(
+                          hintText: "Write message...",
+                          hintStyle: TextStyle(color: Colors.black54),
+                          border: InputBorder.none),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 15,
+                  ),
+                  FloatingActionButton(
+                    onPressed: () {},
+                    child: Icon(
+                      Icons.send,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    backgroundColor: Colors.green[900],
+                    elevation: 0,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ]));
   }
 
   Widget sendMessage(AsyncSnapshot snapshot, int index, BuildContext context) {
     return new Padding(
       padding: new EdgeInsets.symmetric(vertical: .0, horizontal: 8.0),
-      child: InkWell(
-        onTap: (){
-          
-        },
-        child: Container(
-          child: new Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              new Padding(
-                padding: new EdgeInsets.fromLTRB(10.0, 16.0, 0, 0),
-                child: new Text(
-                  snapshot.data[index]['friendid'],
-                  textAlign: TextAlign.left,
-                  style: TextStyle(fontSize: 25.0, fontWeight: FontWeight.bold),
+      child: Container(
+        child: new Padding(
+          padding: new EdgeInsets.fromLTRB(10.0, 16.0, 0, 0),
+          child: Align(
+            alignment: (snapshot.data[index]['userid'] == "choochoo"
+                ? Alignment.topLeft
+                : Alignment.topRight),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                color: (snapshot.data[index]['userid'] == "choochoo"
+                    ? Colors.grey.shade300
+                    : Colors.green[500]),
+              ),
+              padding: EdgeInsets.all(16),
+              child: Text(
+                snapshot.data[index]['context'],
+                style: TextStyle(
+                  fontSize: 15,
                 ),
-              )
-            ],
+              ),
+            ),
           ),
         ),
       ),
     );
   }
-  
 }
