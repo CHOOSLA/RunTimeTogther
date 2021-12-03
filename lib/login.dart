@@ -16,8 +16,8 @@ class Login extends StatefulWidget {
 class _Login extends State<Login> {
   bool visible = false;
 
-  final user_idController = TextEditingController();
-  final passwordController = TextEditingController();
+  TextEditingController user_idController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
 
   Future userLogin() async {
     setState(() {

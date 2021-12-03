@@ -16,20 +16,20 @@ class AddFriend extends StatefulWidget {
 class _AddFriend extends State<AddFriend> {
   bool visible = false;
 
-  final user_idController = TextEditingController();
+  TextEditingController user_idController = TextEditingController();
 
   Future userAddFriend() async {
     setState(() {
       visible = true;
     });
 
-    String user_id = user_idController.text;
+    String userId = user_idController.text;
 
     final UserState state = Provider.of<UserState>(context, listen: false);
 
     var url = Uri.parse('${Env.URL_PREFIX}/add_friend.php');
 
-    var data = {'userid': state.id, 'freindid': user_id};
+    var data = {'userid': state.id, 'freindid': userId};
 
     var response = await http.post(url, body: json.encode(data));
 
@@ -107,7 +107,7 @@ class _AddFriend extends State<AddFriend> {
                       SizedBox(
                         width: 10,
                       ),
-                      Text("회원가입",
+                      Text("친구추가",
                           style: const TextStyle(
                               color: const Color(0xff02171a), fontSize: 20),
                           textAlign: TextAlign.left),
