@@ -39,6 +39,7 @@ dependencies:
   workmanager: ^0.4.1
   flutter_local_notifications: ^9.1.4
   background_location: ^0.8.1
+  flutter_polyline_points: ^1.0.0
 
 dev_dependencies:
   flutter_test:
