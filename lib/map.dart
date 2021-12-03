@@ -506,12 +506,10 @@ class MapSampleState extends State<MapSample> {
       //여기는 뛰어야함
       state.setIsRun(false);
 
-      /*
       //내가 만든 경로 삭제
       polylineCoordinates = [];
       polylines = {};
 
-    
       //내가 만든 경로 db에서도 삭제
       var url = Uri.parse('${Env.URL_PREFIX}/delete_history.php');
 
@@ -522,7 +520,6 @@ class MapSampleState extends State<MapSample> {
       var response = await http.post(url, body: json.encode(data));
 
       var decoded = json.decode(response.body);
-      */
 
       setState(() {});
       return;
