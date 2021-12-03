@@ -17,6 +17,7 @@ import 'dart:ui' as ui;
 import 'package:image/image.dart' as image;
 import 'package:runtimetogether/profilepainter.dart';
 import 'package:http/http.dart' as http;
+import 'package:runtimetogether/runmodal.dart';
 import 'package:runtimetogether/states/userstate.dart';
 
 import 'chat.dart';
@@ -50,8 +51,22 @@ class MapSampleState extends State<MapSample> {
   //타이머
   late Timer _timer;
 
+  //화면이 지금 정중인지
   bool _isCenter = true;
+
+  //지금 포커스 중인지
   bool _isFocus = false;
+
+  //경로를 그리기 위한 변수
+  List<LatLng> polylineCoordinates = [];
+  Map<PolylineId, Polyline> polylines = {};
+
+  //친구들 경로를 그리기 위한 변수
+  List<LatLng> friendPolylineCoordinates = [];
+  Map<PolylineId, Polyline> friendPolylines = {};
+
+  //친구들 경로 색깔
+  Map<String, Color> friendLineColor = {};
 
   @override
   void initState() {
@@ -139,17 +154,54 @@ class MapSampleState extends State<MapSample> {
     }
   }
 
+  //일단 내 정보 부터 갱신
   Future<List<Marker>> _refresh() async {
-    //렉을 유발할 수 있음
+    //매 5초마다 실행됨 참조 : _timer
+    //렉을 유발할 수 있음 --> 계속 마커를 포함한 지도를 그리기 때문
     //렉을 줄일려면 _friends에서 직접 latitude를 건들여주어야함
+
+    //현재 로그인 유저의 정보를 불러옴
+    final UserState state = Provider.of<UserState>(context, listen: false);
+
     print('리프레쉬중...');
+
+    //이제 뛰기 시작한 경우 여기서 처리
+    if (state.isRun) {
+      polylineCoordinates.add(LatLng(_latitude, _longitude));
+      PolylineId plid = PolylineId(state.id);
+      Polyline polyline = Polyline(
+        polylineId: plid,
+        color: Colors.red,
+        points: polylineCoordinates,
+        width: 3,
+      );
+      polylines[plid] = polyline;
+
+      //자신의 주소를 DB에 계속 갱신 history
+      var myid = state.id;
+      _uesrid = state.id;
+      var time = DateTime.now().toString();
+
+      var data = {
+        'userid': '$myid',
+        'time': '$time',
+        'latitude': '$_latitude',
+        'longitude': '$_longitude'
+      };
+
+      var url = Uri.parse('${Env.URL_PREFIX}/set_history.php');
+
+      var response = await http.post(url, body: json.encode(data));
+      var message = jsonDecode(response.body);
+    }
+
     Position we = await determinePosition();
     var latitude = we.latitude;
     var longitude = we.longitude;
 
     var url = Uri.parse('${Env.URL_PREFIX}/update_gps.php');
-    final UserState state = Provider.of<UserState>(context, listen: false);
 
+    //자신의 주소를 DB에 계속 갱신 currentgps
     var myid = state.id;
     _uesrid = state.id;
     var time = DateTime.now().toString();
@@ -162,6 +214,7 @@ class MapSampleState extends State<MapSample> {
     };
     var response = await http.post(url, body: json.encode(data));
     var message = jsonDecode(response.body);
+
     return _getFriends();
   }
 
@@ -174,20 +227,31 @@ class MapSampleState extends State<MapSample> {
 
   //현재 위치로 돌아오는 기능
   Future<void> _focus() async {
+    _timer.cancel();
     _isFocus = true;
     _getCurremtPosition();
     final GoogleMapController controller = await _controller.future;
     controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
         zoom: 15, bearing: 0, target: LatLng(_latitude, _longitude))));
     _isCenter = true;
-    setState(() {});
+    const oneSecond = const Duration(seconds: 5);
+    _timer = new Timer.periodic(oneSecond, (Timer t) => setState(() {}));
   }
 
   //뛰기시작
   _run() {
-    print('테스트');
+    showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Color(0xfff4fef2),
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+        builder: (BuildContext context) {
+          return ModalPage();
+        });
   }
 
+  //친구들도 불러오기 위에 내 정보 부터 갱신 다음입니다~!
   Future<List<Marker>> _getFriends() async {
     print('여기가 계속 실행됩니다');
     var url = Uri.parse('${Env.URL_PREFIX}/get_friends.php');
@@ -203,6 +267,8 @@ class MapSampleState extends State<MapSample> {
     var decoded = json.decode(response.body);
 
     List<Marker> friendsMarker = [];
+
+    //db에서 친구들 불러오기
     for (Map freind in decoded) {
       //서버 통신 부분
       String friendid = freind['friendid'];
@@ -230,6 +296,37 @@ class MapSampleState extends State<MapSample> {
 
       //프로바이더 갱신 부분
       state.setFriends(friendData);
+
+      //친구들이 뛰고 있다면 (history에 친구아이디의 데이터가 있으면) 경로 생성
+      url2 = Uri.parse('${Env.URL_PREFIX}/get_history.php');
+      response2 = await http.post(url2, body: json.encode(data));
+      var historyData = jsonDecode(response2.body);
+
+      List<LatLng> polylineCoordinates = [];
+      Map<PolylineId, Polyline> polylines = {};
+      if (historyData != '경로없음') {
+        for (var history in historyData) {
+          polylineCoordinates.add(LatLng(double.parse(history['latitude']),
+              double.parse(history['longitude'])));
+        }
+
+        PolylineId id = PolylineId(friendid);
+        if (!friendLineColor.containsKey(friendid)) {
+          friendLineColor[friendid] =
+              Color((Random().nextDouble() * 0xFFFFFF).toInt())
+                  .withOpacity(1.0);
+        }
+        Polyline polyline = Polyline(
+          polylineId: id,
+          color: friendLineColor[friendid]!,
+          points: polylineCoordinates,
+          width: 4,
+        );
+        polylines[id] = polyline;
+        friendPolylines.addAll(polylines);
+
+        this.polylines.addAll(friendPolylines);
+      }
 
       //커스텀 Marker 만드는 부분
       Uint8List friendicon = await _getFrinedIcon(friendData['image']);
@@ -380,6 +477,64 @@ class MapSampleState extends State<MapSample> {
     print(message);
   }
 
+  //여기서 부터는 디자인 메소드
+  Widget situationText() {
+    final UserState state = Provider.of<UserState>(context, listen: false);
+    if (state.isRun) {
+      return Text('그만하기');
+    } else if (_isCenter) {
+      return Text('뛰기');
+    } else {
+      return Text('현재 위치로 이동');
+    }
+  }
+
+  Widget situationIcon() {
+    final UserState state = Provider.of<UserState>(context, listen: false);
+    if (state.isRun) {
+      return Icon(Icons.stop_circle_outlined);
+    } else if (_isCenter) {
+      return Icon(Icons.run_circle_outlined);
+    } else {
+      return Icon(Icons.refresh);
+    }
+  }
+
+  Future<void> situationRun() async {
+    final UserState state = Provider.of<UserState>(context, listen: false);
+    if (_isCenter && state.isRun) {
+      //여기는 뛰어야함
+      state.setIsRun(false);
+
+      /*
+      //내가 만든 경로 삭제
+      polylineCoordinates = [];
+      polylines = {};
+
+    
+      //내가 만든 경로 db에서도 삭제
+      var url = Uri.parse('${Env.URL_PREFIX}/delete_history.php');
+
+      var myid = state.id;
+
+      var data = {'userid': '$myid'};
+
+      var response = await http.post(url, body: json.encode(data));
+
+      var decoded = json.decode(response.body);
+      */
+
+      setState(() {});
+      return;
+    }
+
+    if (_isCenter) {
+      _run();
+    } else {
+      _focus();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
@@ -411,9 +566,12 @@ class MapSampleState extends State<MapSample> {
                   else {
                     //이제 여기서 계속 통신 받아서 새로고침
                     _friendsMarker = snapshot.data;
+                    final UserState state =
+                        Provider.of<UserState>(context, listen: false);
                     return Stack(
                       children: [
                         GoogleMap(
+                          polylines: Set<Polyline>.of(polylines.values),
                           mapType: MapType.normal,
                           initialCameraPosition: CameraPosition(
                               zoom: 15,
@@ -428,30 +586,28 @@ class MapSampleState extends State<MapSample> {
                           onCameraMoveStarted: () {
                             if (!_isFocus) {
                               _isCenter = false;
+                              setState(() {});
                             }
                             print('화면이동');
-
-                            setState(() {});
                           },
                           onCameraIdle: () {
                             if (_isFocus) {
                               _isFocus = false;
+                              setState(() {});
                             }
                             print('쉼');
                             if (_isCenter) {}
                             //_isCenter = false;
-                            setState(() {});
                           },
+                          scrollGesturesEnabled: state.isRun ? false : true,
                           zoomControlsEnabled: false,
                         ),
                         Align(
                           alignment: Alignment(0, 0.8),
                           child: FloatingActionButton.extended(
-                            onPressed: _isCenter ? _run : _focus,
-                            label: _isCenter ? Text('뛰기') : Text('현재 위치로 이동'),
-                            icon: _isCenter
-                                ? Icon(Icons.run_circle_outlined)
-                                : Icon(Icons.refresh),
+                            onPressed: situationRun,
+                            label: situationText(),
+                            icon: situationIcon(),
                           ),
                         ),
                         Align(
